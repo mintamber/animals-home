@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Animal Homes ESL Quest</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+
+    :root {
+      --sky-a: #7dd3fc;
+      --sky-b: #c7d2fe;
+      --sun: #fde68a;
+      --leaf: #86efac;
+      --ink: #1e293b;
+      --cream: #fff7ed;
+      --glass: rgba(255, 255, 255, 0.58);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,.96), transparent 28%),
+        radial-gradient(circle at 82% 16%, rgba(253,230,138,.78), transparent 20%),
+        linear-gradient(135deg, #e0f2fe 0%, #ecfeff 38%, #fef3c7 100%);
+      color: var(--ink);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    @keyframes cloudDrift {
+      from { transform: translateX(-34vw); }
+      to { transform: translateX(132vw); }
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) rotate(-.5deg); }
+      50% { transform: translateY(-11px) rotate(.5deg); }
+    }
+
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); opacity: .8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    @keyframes popIn {
+      0% { transform: translateY(14px) scale(.94); opacity: 0; filter: blur(6px); }
+      100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes sparkleRise {
+      0% { transform: translateY(0) scale(.4); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translateY(-68px) scale(1.12); opacity: 0; }
+    }
+
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      18% { transform: translateX(-8px); }
+      36% { transform: translateX(8px); }
+      54% { transform: translateX(-5px); }
+      72% { transform: translateX(5px); }
+    }
+
+    @keyframes ribbonGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .game-frame {
+      position: relative;
+      width: min(1180px, 96vw);
+      aspect-ratio: 16 / 9;
+      border-radius: 42px;
+      overflow: hidden;
+      border: 8px solid rgba(255,255,255,.88);
+      box-shadow:
+        0 34px 80px rgba(15, 23, 42, .22),
+        inset 0 0 0 1px rgba(255,255,255,.55);
+      background:
+        linear-gradient(180deg, rgba(125,211,252,.88) 0%, rgba(199,210,254,.72) 50%, rgba(187,247,208,.86) 100%);
+    }
+
+    .game-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 25%, rgba(255,255,255,.7), transparent 18%),
+        radial-gradient(circle at 78% 19%, rgba(255,247,237,.9), transparent 18%),
+        linear-gradient(120deg, rgba(255,255,255,.22), transparent 42%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .game-frame::after {
+      content: "";
+      position: absolute;
+      left: -5%;
+      right: -5%;
+      bottom: -12%;
+      height: 32%;
+      background:
+        radial-gradient(ellipse at 20% 100%, rgba(34,197,94,.36), transparent 58%),
+        radial-gradient(ellipse at 70% 100%, rgba(132,204,22,.36), transparent 60%),
+        linear-gradient(180deg, transparent, rgba(22,101,52,.17));
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .cloud {
+      position: absolute;
+      z-index: 0;
+      opacity: .45;
+      filter: drop-shadow(0 8px 14px rgba(255,255,255,.35));
+      animation: cloudDrift linear infinite;
+    }
+    .cloud-a { top: 8%; width: 170px; animation-duration: 32s; }
+    .cloud-b { top: 32%; width: 250px; animation-duration: 46s; animation-delay: -13s; opacity: .32; }
+    .cloud-c { top: 61%; width: 135px; animation-duration: 38s; animation-delay: -25s; opacity: .5; }
+
+    .scene-dot {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.65);
+      box-shadow: 0 0 20px rgba(255,255,255,.85);
+      z-index: 2;
+      animation: softPulse 3.2s ease-in-out infinite;
+    }
+
+    .content {
+      position: relative;
+      z-index: 4;
+      width: 100%;
+      height: 100%;
+      padding: clamp(18px, 2.4vw, 34px);
+      transition: opacity .36s ease, transform .36s ease, filter .36s ease;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transform: scale(.975) translateY(8px);
+      filter: blur(6px);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(255,255,255,.74);
+      box-shadow: 0 10px 30px rgba(15,23,42,.09);
+      backdrop-filter: blur(14px);
+      font-weight: 900;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .sound-toggle[aria-pressed="false"] {
+      opacity: .72;
+    }
+
+    .progress-shell {
+      width: min(360px, 38vw);
+      height: 14px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      box-shadow: inset 0 2px 5px rgba(15,23,42,.09);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #facc15, #fb923c, #34d399, #38bdf8);
+      background-size: 220% 220%;
+      animation: ribbonGlow 4s ease infinite;
+      transition: width .5s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: .95;
+      color: white;
+      text-shadow: 0 8px 22px rgba(15,23,42,.18);
+      letter-spacing: -.03em;
+    }
+
+    .hero-subtitle {
+      margin: 12px auto 18px;
+      max-width: 780px;
+      text-align: center;
+      font-size: clamp(14px, 1.7vw, 20px);
+      font-weight: 800;
+      color: rgba(30,41,59,.72);
+      background: rgba(255,255,255,.45);
+      padding: 8px 16px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(86px, 1fr));
+      gap: clamp(10px, 1.4vw, 18px);
+      width: min(1040px, 100%);
+      margin: 0 auto;
+    }
+
+    .animal-card {
+      position: relative;
+      min-height: 178px;
+      padding: 12px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.48));
+      border: 1px solid rgba(255,255,255,.72);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, .12);
+      backdrop-filter: blur(18px);
+      cursor: pointer;
+      transform: translateZ(0);
+      transition: transform .28s cubic-bezier(.22, 1, .36, 1), box-shadow .28s ease, background .28s ease;
+      animation: popIn .58s both;
+      overflow: hidden;
+    }
+
+    .animal-card::before {
+      content: "";
+      position: absolute;
+      inset: -50%;
+      background: radial-gradient(circle, rgba(255,255,255,.85), transparent 34%);
+      transform: translate(-42%, -42%);
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+
+    .animal-card:hover {
+      transform: translateY(-12px) scale(1.045);
+      box-shadow: 0 24px 54px rgba(15,23,42,.18);
+      background: rgba(255,255,255,.86);
+    }
+
+    .animal-card:hover::before {
+      opacity: .55;
+    }
+
+    .animal-card.completed {
+      outline: 4px solid rgba(52,211,153,.55);
+    }
+
+    .animal-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      overflow: hidden;
+      background: rgba(255,255,255,.52);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.78);
+    }
+
+    .animal-img-wrap img,
+    .big-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .animal-name {
+      position: relative;
+      z-index: 2;
+      margin-top: 10px;
+      text-align: center;
+      font-size: clamp(16px, 1.45vw, 25px);
+      font-weight: 1000;
+      color: #334155;
+    }
+
+    .badge-done {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display: none;
+      place-items: center;
+      background: #34d399;
+      color: white;
+      box-shadow: 0 8px 18px rgba(16,185,129,.28);
+      z-index: 4;
+      font-weight: 1000;
+    }
+    .animal-card.completed .badge-done { display: grid; }
+
+    .detail-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .question-box {
+      flex: 1;
+      text-align: center;
+      padding: 12px 24px;
+      border-radius: 28px;
+      background: rgba(255,255,255,.52);
+      border: 1px solid rgba(255,255,255,.76);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 36px rgba(15,23,42,.1);
+      font-size: clamp(24px, 3vw, 42px);
+      font-weight: 1000;
+      color: white;
+      text-shadow: 0 5px 14px rgba(15,23,42,.2);
+    }
+
+    .soft-btn {
+      border: 0;
+      min-height: 48px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      color: #2563eb;
+      font-weight: 1000;
+      padding: 11px 17px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(15,23,42,.12);
+      backdrop-filter: blur(12px);
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .soft-btn:hover { transform: translateY(-2px) scale(1.03); background: white; }
+    .soft-btn:active { transform: scale(.97); }
+
+    .match-stage {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+      gap: clamp(12px, 2vw, 34px);
+      align-items: center;
+      justify-items: center;
+      min-height: 0;
+    }
+
+    .big-card {
+      position: relative;
+      width: min(330px, 30vw);
+      padding: 16px;
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.54));
+      border: 1px solid rgba(255,255,255,.8);
+      box-shadow: 0 22px 56px rgba(15,23,42,.15);
+      backdrop-filter: blur(16px);
+      animation: floaty 4s ease-in-out infinite;
+    }
+
+    .big-card.home-card {
+      animation-delay: -1.3s;
+    }
+
+    .big-visual {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 26px;
+      overflow: hidden;
+      background: rgba(255,255,255,.64);
+      border: 4px solid rgba(255,255,255,.78);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.86);
+    }
+
+    .big-label {
+      margin-top: 12px;
+      text-align: center;
+      font-size: clamp(24px, 2.5vw, 38px);
+      font-weight: 1000;
+      letter-spacing: -.02em;
+    }
+
+    .animal-label { color: #2563eb; }
+    .home-label { color: #059669; }
+
+    .arrow-wrap {
+      width: clamp(66px, 8vw, 118px);
+      height: clamp(66px, 8vw, 118px);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.42);
+      border: 1px solid rgba(255,255,255,.7);
+      box-shadow: 0 18px 44px rgba(15,23,42,.12);
+      backdrop-filter: blur(12px);
+      color: white;
+      text-shadow: 0 5px 15px rgba(15,23,42,.16);
+    }
+
+    .mystery-overlay {
+      position: absolute;
+      inset: 16px 16px auto 16px;
+      aspect-ratio: 1 / 1;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,.5), transparent 22%),
+        linear-gradient(135deg, #34d399, #22c55e, #0ea5e9);
+      color: white;
+      z-index: 6;
+      border: 4px solid rgba(255,255,255,.65);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.32), 0 16px 38px rgba(5,150,105,.22);
+      cursor: pointer;
+      transition: opacity .45s ease, transform .45s cubic-bezier(.22,1,.36,1), filter .45s ease;
+    }
+
+    .mystery-overlay.hidden-reveal {
+      opacity: 0;
+      transform: rotateY(75deg) scale(.28);
+      filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .question-mark {
+      text-align: center;
+    }
+    .question-mark b {
+      display: block;
+      font-size: clamp(58px, 8vw, 104px);
+      line-height: .78;
+      text-shadow: 0 10px 18px rgba(15,23,42,.2);
+      animation: softPulse 1.3s ease-in-out infinite;
+    }
+    .question-mark span {
+      display: block;
+      margin-top: 12px;
+      font-size: clamp(14px, 1.6vw, 20px);
+      font-weight: 1000;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .choice-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 30px;
+      background: rgba(255,255,255,.52);
+      border: 1px solid rgba(255,255,255,.76);
+      box-shadow: 0 16px 42px rgba(15,23,42,.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .choice-btn {
+      border: 0;
+      border-radius: 22px;
+      padding: 13px 12px;
+      min-height: 54px;
+      background: rgba(255,255,255,.78);
+      color: #334155;
+      font-size: clamp(17px, 1.8vw, 25px);
+      font-weight: 1000;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(15,23,42,.08);
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-3px);
+      background: #fff;
+      box-shadow: 0 15px 28px rgba(15,23,42,.12);
+    }
+    .choice-btn.correct { background: #86efac; color: #14532d; }
+    .choice-btn.wrong { background: #fecaca; color: #7f1d1d; animation: shakeWrong .42s ease; }
+    .choice-btn:disabled { cursor: default; }
+
+    .sentence-card {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      border-radius: 24px;
+      padding: 11px 14px;
+      background: rgba(255,255,255,.74);
+      color: #334155;
+      box-shadow: 0 12px 26px rgba(15,23,42,.08);
+      font-weight: 1000;
+      font-size: clamp(17px, 1.7vw, 25px);
+      cursor: pointer;
+      min-width: min(385px, 32vw);
+    }
+    .sentence-card.show { display: flex; animation: popIn .45s both; }
+    .sentence-card .highlight { color: #f59e0b; }
+
+    .speaker-dot {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, #fde047, #fb923c);
+      color: #78350f;
+      box-shadow: 0 10px 20px rgba(251,146,60,.22);
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 20;
+      transform: translate(-50%, -50%) scale(.8);
+      opacity: 0;
+      pointer-events: none;
+      padding: 18px 28px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.86);
+      color: #0f172a;
+      font-size: clamp(24px, 3vw, 44px);
+      font-weight: 1000;
+      box-shadow: 0 26px 60px rgba(15,23,42,.18);
+      backdrop-filter: blur(16px);
+      transition: opacity .22s ease, transform .22s ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    .sparkle {
+      position: absolute;
+      z-index: 22;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 18px #fff, 0 0 28px #facc15;
+      pointer-events: none;
+      animation: sparkleRise .95s ease-out forwards;
+    }
+
+    .completion-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(14,165,233,.86), rgba(52,211,153,.8), rgba(251,191,36,.78));
+      backdrop-filter: blur(14px);
+      text-align: center;
+      padding: 30px;
+    }
+    .completion-screen.show { display: grid; animation: popIn .6s both; }
+    .completion-card {
+      width: min(720px, 86%);
+      padding: 34px;
+      border-radius: 42px;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 30px 75px rgba(15,23,42,.2);
+    }
+    .completion-card h2 {
+      margin: 0 0 10px;
+      font-size: clamp(42px, 6vw, 82px);
+      line-height: .9;
+      color: #0f766e;
+      letter-spacing: -.04em;
+    }
+    .completion-card p {
+      margin: 0 0 24px;
+      font-size: clamp(18px, 2.2vw, 30px);
+      font-weight: 900;
+      color: #334155;
+    }
+
+    .missing-img {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,.65) 0 12px, rgba(226,232,240,.45) 12px 24px);
+      color: rgba(15,23,42,.55);
+      font-weight: 1000;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      body { padding: 8px; }
+      .game-frame { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; border-width: 0; }
+      .content { padding: 14px; }
+      .animal-grid { grid-template-columns: repeat(4, 1fr); overflow-y: auto; padding: 4px; }
+      .animal-card { min-height: 142px; border-radius: 22px; }
+      .detail-header { flex-wrap: wrap; }
+      .question-box { order: 3; flex-basis: 100%; }
+      .match-stage { grid-template-columns: 1fr; gap: 10px; }
+      .big-card { width: min(230px, 60vw); padding: 10px; border-radius: 26px; animation: none; }
+      .arrow-wrap { transform: rotate(90deg); width: 58px; height: 58px; }
+      .choices { grid-template-columns: 1fr; }
+      .choice-panel { grid-template-columns: 1fr; }
+      .sentence-card { min-width: auto; }
+      .progress-shell { width: 34vw; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-frame" aria-label="Animal Homes ESL Quest">
+    <svg class="cloud cloud-a" viewBox="0 0 256 256" aria-hidden="true"><path d="M160,104a64.06,64.06,0,0,0-61.27,45.42A40,40,0,1,0,112,228h48a64,64,0,0,0,0-128Z" fill="#fff" /></svg>
+    <svg class="cloud cloud-b" viewBox="0 0 256 256" aria-hidden="true"><path d="M160,104a64.06,64.06,0,0,0-61.27,45.42A40,40,0,1,0,112,228h48a64,64,0,0,0,0-128Z" fill="#fff" /></svg>
+    <svg class="cloud cloud-c" viewBox="0 0 256 256" aria-hidden="true"><path d="M160,104a64.06,64.06,0,0,0-61.27,45.42A40,40,0,1,0,112,228h48a64,64,0,0,0,0-128Z" fill="#fff" /></svg>
+
+    <span class="scene-dot" style="left: 12%; top: 18%; animation-delay: -.7s"></span>
+    <span class="scene-dot" style="left: 86%; top: 28%; animation-delay: -1.6s"></span>
+    <span class="scene-dot" style="left: 72%; top: 78%; animation-delay: -2.1s"></span>
+
+    <section id="content" class="content">
+      <div id="view-grid" class="h-full flex flex-col justify-center">
+        <div class="top-bar">
+          <div class="pill" id="score-pill">⭐ Score: <span id="score">0</span></div>
+          <div class="progress-shell" aria-label="progress"><div id="progress-fill" class="progress-fill"></div></div>
+          <button class="pill sound-toggle" id="sound-toggle" aria-pressed="true" type="button">🔊 Sound</button>
+        </div>
+
+        <h1><span style="color:#fde68a">Where</span> Do Animals Live?</h1>
+        <p class="hero-subtitle">Tap an animal, guess its home, then listen and repeat the full English sentence.</p>
+        <div id="animal-grid" class="animal-grid" aria-label="Animal choices"></div>
+      </div>
+
+      <div id="view-detail" class="detail-layout hidden">
+        <header class="detail-header">
+          <button class="soft-btn" type="button" onclick="handleBack()" aria-label="Back to animals">
+            <span style="font-size: 22px">←</span> Back
+          </button>
+          <div id="detail-question" class="question-box">Where does it live?</div>
+          <button class="soft-btn" type="button" onclick="repeatQuestion()">🔁 Repeat</button>
+        </header>
+
+        <section class="match-stage" aria-label="Animal and home matching area">
+          <article class="big-card animal-card-large">
+            <div id="detail-animal-container" class="big-visual"></div>
+            <div id="detail-animal-name" class="big-label animal-label"></div>
+          </article>
+
+          <div class="arrow-wrap" aria-hidden="true">
+            <svg width="70%" height="70%" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"></path>
+            </svg>
+          </div>
+
+          <article class="big-card home-card">
+            <div id="detail-home-container" class="big-visual"></div>
+            <button id="home-mystery-overlay" class="mystery-overlay" type="button" onclick="revealHome(false)" aria-label="Reveal animal home">
+              <div class="question-mark"><b>?</b><span>Choose below</span></div>
+            </button>
+            <div id="detail-home-name" class="big-label home-label" style="opacity:0">Home</div>
+          </article>
+        </section>
+
+        <footer class="choice-panel">
+          <div id="choices" class="choices" aria-label="Home choices"></div>
+          <div id="detail-tts-btn" class="sentence-card" onclick="speakCurrentSentence()" title="Click to hear the sentence">
+            <div class="speaker-dot">▶</div>
+            <div id="detail-sentence">A bee lives in a <span class="highlight">hive</span>.</div>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <div id="toast" class="toast">Great!</div>
+
+    <section id="completion-screen" class="completion-screen" aria-label="Quest completed">
+      <div class="completion-card">
+        <h2>Quest Completed!</h2>
+        <p>You matched every animal with its home.</p>
+        <button class="soft-btn" type="button" onclick="restartGame()">↻ Play Again</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Local illustration filenames are intentionally kept unchanged.
+    const animalData = [
+      { id: 'bee', name: 'Bee', homeName: 'Hive', animalImg: 'bee.webp', homeImg: 'bee hive.webp', question: 'Where does a bee live?', sentence: 'A bee lives in a hive.' },
+      { id: 'bear', name: 'Bear', homeName: 'Den', animalImg: 'bear.webp', homeImg: 'bear den.webp', question: 'Where does a bear live?', sentence: 'A bear lives in a den.' },
+      { id: 'rabbit', name: 'Rabbit', homeName: 'Burrow', animalImg: 'rabbit.webp', homeImg: 'rabbit burrow.webp', question: 'Where does a rabbit live?', sentence: 'A rabbit lives in a burrow.' },
+      { id: 'chicken', name: 'Chicken', homeName: 'Coop', animalImg: 'chicken.webp', homeImg: 'chicken coop.webp', question: 'Where does a chicken live?', sentence: 'A chicken lives in a coop.' },
+      { id: 'sheep', name: 'Sheep', homeName: 'Pen', animalImg: 'sheep.webp', homeImg: 'sheep pen.webp', question: 'Where does a sheep live?', sentence: 'A sheep lives in a pen.' },
+      { id: 'beaver', name: 'Beaver', homeName: 'Lodge', animalImg: 'beaver.webp', homeImg: 'beaver lodge.webp', question: 'Where does a beaver live?', sentence: 'A beaver lives in a lodge.' },
+      { id: 'dog', name: 'Dog', homeName: 'Kennel', animalImg: 'dog.webp', homeImg: 'dog kennel.webp', question: 'Where does a dog live?', sentence: 'A dog lives in a kennel.' }
+    ];
+
+    let currentActiveAnimal = null;
+    let completed = new Set();
+    let score = 0;
+    let soundOn = true;
+    let audioCtx = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function tone(freq = 440, duration = 0.12, type = 'sine', gain = 0.045) {
+      if (!soundOn) return;
+      try {
+        ensureAudio();
+        const oscillator = audioCtx.createOscillator();
+        const volume = audioCtx.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = freq;
+        volume.gain.setValueAtTime(gain, audioCtx.currentTime);
+        volume.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        oscillator.connect(volume);
+        volume.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function successSound() {
+      tone(523.25, .09, 'triangle', .05);
+      setTimeout(() => tone(659.25, .1, 'triangle', .05), 90);
+      setTimeout(() => tone(783.99, .14, 'triangle', .05), 180);
+    }
+
+    function wrongSound() {
+      tone(190, .16, 'sawtooth', .035);
+      setTimeout(() => tone(150, .12, 'sawtooth', .03), 105);
+    }
+
+    function speak(text) {
+      if (!soundOn || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.88;
+      utterance.pitch = 1.08;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function handleImgError(imgElement, type, id) {
+      const parent = imgElement.parentElement;
+      parent.innerHTML = `<div class="missing-img">Image Missing<br><small>${type}: ${id}</small></div>`;
+    }
+
+    function renderGrid() {
+      const grid = $('animal-grid');
+      grid.innerHTML = animalData.map((animal, index) => `
+        <button type="button" onclick="handleSelectAnimal('${animal.id}')"
+          class="animal-card ${completed.has(animal.id) ? 'completed' : ''}"
+          style="animation-delay:${index * 0.055}s"
+          aria-label="Choose ${animal.name}">
+          <span class="badge-done">✓</span>
+          <div class="animal-img-wrap">
+            <img src="${animal.animalImg}" alt="${animal.name}" onerror="handleImgError(this, 'animal', '${animal.id}')">
+          </div>
+          <div class="animal-name">${animal.name}</div>
+        </button>
+      `).join('');
+      updateStats();
+    }
+
+    function updateStats() {
+      $('score').textContent = score;
+      const percent = Math.round((completed.size / animalData.length) * 100);
+      $('progress-fill').style.width = percent + '%';
+    }
+
+    function transitionTo(callback) {
+      const content = $('content');
+      content.classList.add('fade-out');
+      setTimeout(() => {
+        callback();
+        content.classList.remove('fade-out');
+      }, 340);
+    }
+
+    function handleSelectAnimal(id) {
+      const animal = animalData.find(a => a.id === id);
+      currentActiveAnimal = animal;
+      ensureAudio();
+      tone(392, .08, 'triangle', .025);
+      transitionTo(() => {
+        $('view-grid').classList.add('hidden');
+        $('view-detail').classList.remove('hidden');
+
+        $('detail-question').textContent = animal.question;
+        $('detail-animal-container').innerHTML = `<img src="${animal.animalImg}" alt="${animal.name}" onerror="handleImgError(this, 'animal', '${animal.id}')">`;
+        $('detail-animal-name').textContent = animal.name;
+        $('detail-home-container').innerHTML = `<img src="${animal.homeImg}" alt="${animal.homeName}" onerror="handleImgError(this, 'home', '${animal.id}')">`;
+        $('detail-home-name').textContent = animal.homeName;
+        $('detail-home-name').style.opacity = 0;
+        $('detail-sentence').innerHTML = `A ${animal.name.toLowerCase()} lives in a <span class="highlight">${animal.homeName.toLowerCase()}</span>.`;
+        $('detail-tts-btn').classList.remove('show');
+        $('home-mystery-overlay').classList.remove('hidden-reveal');
+        $('home-mystery-overlay').querySelector('span').textContent = 'Choose below';
+        renderChoices(animal);
+        setTimeout(() => speak(animal.question), 460);
+      });
+    }
+
+    function renderChoices(animal) {
+      const wrongHomes = animalData
+        .filter(item => item.id !== animal.id)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2)
+        .map(item => item.homeName);
+      const options = [...wrongHomes, animal.homeName].sort(() => Math.random() - 0.5);
+      $('choices').innerHTML = options.map(option => `
+        <button class="choice-btn" type="button" onclick="checkAnswer(this, '${option.replace(/'/g, "\\'")}')">${option}</button>
+      `).join('');
+    }
+
+    function checkAnswer(button, option) {
+      if (!currentActiveAnimal) return;
+      const buttons = [...document.querySelectorAll('.choice-btn')];
+      const correct = option === currentActiveAnimal.homeName;
+
+      if (correct) {
+        buttons.forEach(btn => {
+          btn.disabled = true;
+          if (btn.textContent === currentActiveAnimal.homeName) btn.classList.add('correct');
+        });
+        revealHome(true);
+      } else {
+        button.classList.add('wrong');
+        button.disabled = true;
+        wrongSound();
+        showToast('Try again!');
+        speak('Try again.');
+      }
+    }
+
+    function revealHome(fromCorrectChoice) {
+      if (!currentActiveAnimal) return;
+      const overlay = $('home-mystery-overlay');
+      const alreadyRevealed = overlay.classList.contains('hidden-reveal');
+      if (alreadyRevealed) return;
+
+      overlay.classList.add('hidden-reveal');
+      $('detail-home-name').style.opacity = 1;
+      $('detail-tts-btn').classList.add('show');
+
+      if (fromCorrectChoice) {
+        if (!completed.has(currentActiveAnimal.id)) {
+          completed.add(currentActiveAnimal.id);
+          score += 10;
+        }
+        updateStats();
+        successSound();
+        sparkleBurst();
+        showToast('Excellent!');
+        setTimeout(() => speak(currentActiveAnimal.sentence), 360);
+        setTimeout(() => {
+          if (completed.size === animalData.length) showCompletion();
+        }, 1100);
+      } else {
+        speak(currentActiveAnimal.homeName);
+        showToast(currentActiveAnimal.homeName);
+      }
+    }
+
+    function repeatQuestion() {
+      if (!currentActiveAnimal) return;
+      tone(440, .08, 'triangle', .025);
+      speak(currentActiveAnimal.question);
+    }
+
+    function speakCurrentSentence() {
+      if (!currentActiveAnimal) return;
+      tone(523, .08, 'triangle', .025);
+      speak(currentActiveAnimal.sentence);
+    }
+
+    function handleBack() {
+      transitionTo(() => {
+        $('view-detail').classList.add('hidden');
+        $('view-grid').classList.remove('hidden');
+        renderGrid();
+      });
+    }
+
+    function showToast(message) {
+      const toast = $('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 820);
+    }
+
+    function sparkleBurst() {
+      const frame = document.querySelector('.game-frame');
+      for (let i = 0; i < 24; i++) {
+        const sparkle = document.createElement('span');
+        sparkle.className = 'sparkle';
+        sparkle.style.left = (45 + Math.random() * 16) + '%';
+        sparkle.style.top = (44 + Math.random() * 18) + '%';
+        sparkle.style.animationDelay = (Math.random() * .22) + 's';
+        frame.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 1250);
+      }
+    }
+
+    function showCompletion() {
+      $('completion-screen').classList.add('show');
+      successSound();
+      setTimeout(() => speak('Quest completed! You matched every animal with its home.'), 380);
+    }
+
+    function restartGame() {
+      completed = new Set();
+      score = 0;
+      currentActiveAnimal = null;
+      $('completion-screen').classList.remove('show');
+      $('view-detail').classList.add('hidden');
+      $('view-grid').classList.remove('hidden');
+      renderGrid();
+      showToast('New Game!');
+    }
+
+    $('sound-toggle').addEventListener('click', () => {
+      soundOn = !soundOn;
+      $('sound-toggle').setAttribute('aria-pressed', String(soundOn));
+      $('sound-toggle').textContent = soundOn ? '🔊 Sound' : '🔇 Muted';
+      if (soundOn) tone(523, .08, 'triangle', .035);
+      if (!soundOn && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !$('view-detail').classList.contains('hidden')) handleBack();
+      if (event.key.toLowerCase() === 'r') repeatQuestion();
+      if (event.key === 'Enter' && currentActiveAnimal && $('detail-tts-btn').classList.contains('show')) speakCurrentSentence();
+    });
+
+    window.onload = () => renderGrid();
+  </script>
+</body>
+</html>
